@@ -833,7 +833,20 @@ Otherwise, if the thread is not attached to the JVM, no JNI calls should be perf
 
 ### Providing Additional DLLs for Windows Mobile
 
-If your application needs additional DLLs, put them in the TARGET_TEMP_DIR. The Rhodes build scripts will detect them and include them in the final binary automatically.
+If your application needs additional DLLs, your build script must put them in the TARGET_TEMP_DIR. The Rhodes build scripts will detect them and include them in the final binary automatically.
+
+## Integrating a 3rd party SDK
+
+It is possible to integrate an SDK or library provided by a third party (for example, to access device-specific features or to reuse existing code), the process is the same as that for building a native extension.
+
+* download the external SDK or library and make sure it is compatible with your device, if applicable.
+* create an extension with the procedure outlined above
+* update your extension's `build.bat` and/or `build` scripts to copy the necessary `.dll`/`.jar` files in `TARGET_TEMP_DIR`
+* create an appropriate set of native methods to access the library from your Ruby / Javascript code. It is likely that you do not need to expose all the functionality of the library; in most cases you can simplify your code by creating only a few methods that work for your particular use case and provide a [facade](http://en.wikipedia.org/wiki/Facade_pattern) that is more appropriate for your application.
+
+As an example, if you were integrating a reporting or charting library, you would normally not try to provide access to every feature. Instead, you would add a few native methods such as `createSalesChart` or `buildAccountsReport` that take a few parameters and do all the work of interfacing with the library.
+
+This approach also lets you bundle different native SDKs for different platforms, while having a uniform interface in your application.
 
 ## Other Examples
 
