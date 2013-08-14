@@ -1,0 +1,301 @@
+# Geolocation and Mapping
+
+## Using Mapping
+
+You can create an embeddable map interface in your application using the `MapView` class.
+
+### Setting up a map provider
+
+#### Using OpenStreetMap
+
+In `rhoconfig.txt` set the value for `OSM_map_url_roadmap` to an URL of OSM tile map server (example: ‘http://tile.openstreetmap.org/’)
+
+#### Using native Google map view on Android
+
+* Install Google Add-on API using Android SDK Manager
+* Setup Google Play Map service and create Google Maps V2 API key
+* Add `apikey` parameter and `gmaps` extension to your `build.yml`
+        android:
+            apikey: <YOUR-GOOGLE-PLAY-API-KEY>
+            extensions: [gmaps]
+* Add `network_state` and `sdcard` capabilities to your `build.yml`
+        capabilities:
+            - network_state
+            - sdcard
+
+#### using ESRI maps on iPhone
+
+* Install ESRI iOS SDK – use default folders during installations !
+* Add `esri` to your applications extensions list in `build.yml` file.
+* Update map settings in `rhoconfig.txt`
+    * ESRI_map_url_roadmap – URL of ESRI roadmap tile map server (example:  ‘http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/’)
+    * ESRI_map_url_satellite – URL of ESRI satellite tile map server (example: ‘http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/’)
+
+### Creating a map view
+
+Once the map provider has been setup, use the 'MapView.create' method to create a map that appears on a whole page
+
+Refer to the [MapView API](/v/2.2/rhodesapi/mapview-api#create) for detailed explanation of the params passed to the create method.
+
+Ruby syntax:
+    :::ruby
+    Rho::MapView.create(
+        :provider => 'Google', 
+        :settings => {
+                :map_type => "hybrid",
+                :region => [current_lat, current_lon, 0.2, 0.2],
+                :zoom_enabled => true,
+                :scroll_enabled => true,
+                :shows_user_location => false,
+                :api_key => 'Google Maps API Key'
+            }
+        :annotations => [
+                {
+                    :latitude => current_lat, 
+                    :longitude => current_lon, 
+                    :title => "Current location", 
+                    :subtitle => ""
+                }
+            ]
+        )
+
+JavaScript syntax:
+    :::javascript
+    Rho.MapView.create({ 
+        provider: 'Google',
+        settings: {
+                map_type: 'hybrid',
+                region: [current_lat, current_lon, 0.2, 0.2],
+                zoom_enabled: true,
+                scroll_enabled: true,
+                shows_user_location: false,
+                api_key: 'Google Maps API Key'
+            },
+        annotations: [
+                {
+                    latitude: current_lat, 
+                    longitude: current_lon, 
+                    title: "Current location", 
+                    subtitle: ""
+                }
+            ]
+        });
+
+### Enable map caching
+
+You can enable caching of map tiles to increase performance when the user scrolls to an already viewed area. This cache can also be used for offline map browsing.
+
+Ruby syntax:
+    :::ruby
+    Rho::MapView.set_file_caching_enable(1)
+
+JavaScript syntax:
+    :::javascript
+    Rho.MapView.set_file_caching_enable(1);
+
+### Preloading maps
+
+You can display a region of a map more quickly by preloaded map tiles in the region.
+
+Refer to the [MapView API](/v/2.2/rhodesapi/mapview-api#preloadmaptiles) for detailed explanation of the params passed to the preload method.
+
+Ruby syntax:
+    :::ruby
+    def preload_map
+        options = { 
+            :engine => 'OSM',
+            :map_type => 'roadmap',
+            :top_latitude => 60.1,
+            :left_longitude => 30.0,
+            :bottom_latitude => 59.7,
+            :right_longitude => 30.6,
+            :min_zoom => 9,
+            :max_zoom => 11
+        }
+        preloaded_tile_count = Rho::MapView.preload_map_tiles(options, url_for(:action => :preload_callback))
+    end
+
+    def preload_callback
+        puts 'status', @params['status']
+        puts 'progress', @params['progress']
+    end
+
+JavaScript syntax:
+    :::javascript
+    function preload_map() {
+        var options = { 
+            engine: 'OSM',
+            map_type: 'roadmap',
+            top_latitude: 60.1,
+            left_longitude: 30.0,
+            bottom_latitude: 59.7,
+            right_longitude: 30.6,
+            min_zoom: 9,
+            max_zoom: 11
+        };
+        var preloaded_tile_count = Rho.MapView.preload_map_tiles(options, preload_callback);
+    }
+
+    function preload_callback(params) {
+        console.log('status ' + params['status']);
+        console.log('progress ' + params['progress']);
+    }
+
+## Using Geolocation
+
+You can obtain Geolocation information your application using the `GeoLocation` class.
+
+There are two ways to use GeoLocation.
+
+* Synchronously via call to methods in the `GeoLocation` class for specific values.
+* Asynchronously by setting GeoLocation notification and tracking the location via the callback.
+
+### Prerequisite
+
+Before you can make use of Geolocation in your application, you need to include the `gps` capability in your `build.yml`
+
+    :::yaml
+    capabilities:
+        - gps
+
+### Synchronous usage
+
+#### Check if current position is known
+
+Returns true if the location system is up and running, returns null if this feature is not supported on the device platform, or returns false otherwise.
+
+Ruby syntax:
+    :::ruby
+    Rho::GeoLocation.known_position?
+
+JavaScript syntax:
+    :::javascript
+    Rho.GeoLocation.is_known_position();
+
+#### To get the current latitude and longitude
+
+Ruby syntax:
+    :::ruby
+    lat = Rho::GeoLocation.latitude
+    lon = Rho::GeoLocation.longitude
+
+JavaScript syntax:
+    :::javascript
+    var lat = Rho.GeoLocation.latitude();
+    var lon = Rho.GeoLocation.latitude();
+
+#### Turn off GPS
+
+Turn off GPS to conserve battery power. See the GPS power consumption topic below for more details.
+
+Ruby syntax:
+    :::ruby
+    Rho::GeoLocation.turnoff
+
+JavaScript syntax:
+    :::javascript
+    Rho.GeoLocation.turnoff();
+
+### Asynchronous usage
+
+To track the location continuously register a notification using the `GeoLocation.set_notification` method. The callback method will be triggered periodically with the location in the params.
+
+Here are the callback parameters:
+
+* `known_position` - 1 or 0. Same as known_position? / is_known_position method.
+* `latitude` - Same as latitude method.
+* `longitude` - Same as longitude method.
+* `available`
+    * `1` geolocation is available (but the user can turn GPS off in phone settings or not allow GPS activity on iPhone, etc.)
+    * `0` geolocation is not available.
+* `status` - the string `ok` or `error`
+* `error_code` - error code from RhoError if the `status` is `error`.
+* `accuracy` - horizontal radius in meters (iOS and Android).
+
+Ruby syntax:
+    :::ruby
+    def start_tracking
+        # register for a geolocation notification every 3 seconds
+        Rho::GeoLocation.set_notification( url_for(:action => :geo_callback), '', 3)
+    end
+
+    def geo_callback
+        if @params['known_position'] != 0 && @params['status'] =='ok'
+            # show new position
+        end
+    end    
+
+JavaScript syntax:
+    :::javascript
+    function start_tracking() {
+        // register for a geolocation notification every 3 seconds
+        Rho.GeoLocation.set_notification(geo_callback, '', 3);
+    }
+
+    function geo_callback(params) {
+        if (params['known_position'] != 0 && params['status'] === 'ok')
+            // show new position
+        }
+    }
+
+To temporarily disable notification, but still keep GeoLocation active, you can set an empty notification.
+
+Ruby syntax:
+    :::ruby
+    Rho::GeoLocation.set_notification("", "", 30)
+
+JavaScript syntax:
+    :::javascript
+    Rho.GeoLocation.set_notification('', '', 30);
+
+### Geolocation Notes
+
+#### Testing Geolocation
+
+When testing your Geolocation in your application, you can send mock data of different geographical locations to test various scenarios.
+
+The exact steps vary depending on the target platform:
+
+* Android
+    * [Official method](https://developer.android.com/guide/topics/location/strategies.html#MockData)
+    * [3rd Party tool](http://code.google.com/p/android-gps-emulator/)
+    
+* iOS
+    * In the iOS simulator, under `Debug > Location > Custom Location` you can specify a constant latitude/longitude or select several predefined profiles.
+
+* Windows Mobile
+    * In the Windows Mobile emulator, you can use the [FakeGPS](http://msdn.microsoft.com/en-us/library/bb158722.aspx) utility.
+
+#### GPS power consumption
+
+The GPS receiver consumes a significant amount of energy and should be switched off most of the time in order to conserve the device’s battery charge. Any call to `GeoLocation` method or notification call back will power up the GPS receiver. 
+
+The GPS receiver can be turned off by using the `GeoLocation.turnoff` method. It can also be turned off automatically after a period of inactivity by setting `geo_location_inactivity_timeout` in the `rhoconfig.txt`
+
+NOTE: Geolocation is switched off automatically when the application goes into the background, and is switched on as the application goes back to foreground. However it is possible to switch on location services as usual while the application is in background.
+
+#### GPS lock
+
+It usually takes a while to acquire the device’s current position; in some cases, it may take several minutes. It may not work at all indoors or between tall buildings.
+
+#### Network based location provider
+
+On devices that have a cellular connection, RhoMobile also uses network based location determination. Network based location is not as precise as GPS, but in most cases it consumes less power and returns results faster than GPS. RhoMobile will update location using network data until the GPS signal has been received; then only GPS will be used for more precise data.
+
+## Example scenarios
+
+* Use MapView in a GIS application
+* Use GeoLocation to get and store the current location in a location marking application.
+* Use GeoLocation to continuously get the current location in a navigation/routing application.
+* Use MapView and GeoLocation in a navigation/routing application.
+
+## Sample Application
+
+You can find a complete example of using Maps and Geolocation in the [GeoLocation](http://github.com/rhomobile/rhodes-system-api-samples/tree/master/app/Geolocation) demo application.
+
+## Related reading
+
+TODO: these are links to the old API
+
+* The [MapView API reference](/v/2.2/rhodesapi/mapview-api)
+* The [GeoLocation API reference](/rhodesapi/geolocation-api)
