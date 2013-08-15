@@ -1,14 +1,28 @@
 # Geolocation and Mapping
 
-## Using Mapping
+## Using Maps
 
-You can create an embeddable map interface in your application using the `MapView` class.
+You can create an embeddable map interface in your application using the [MapView](../api/MapView) class.
 
-### Setting up a map provider
+### Choosing and setting up a map provider
+
+RhoMobile allows you to retrieve map images (tiles) from different providers, depending on your needs:
+
+* Google
+* OpenStreetMap
+
+Each provider has its own benefits and drawbacks, depending on your use case:
+
+* Google maps provide a free platform-native view component with very good performance on Android consumer devices. However, industrial-strength devices like the ET1 do not include the Google APIs and must resort to a Javascript version, which requires a license from Google. The quality of the maps is typically very good.
+
+* OpenStreetMap provides free-to-use map data for any use as long as some conditions are met (see [OpenStreetMap Copyright and License](http://www.openstreetmap.org/copyright)). The quality varies depending on the zone and tends to improve more quickly in highly populated areas. Because you can add information you collect yourself to the dataset, it can be an excellent choice for some types of applications that can benefit from being able to update their map data on their own terms. While the cartography is public and free to use, OpenStreetMap does not provide a public tile server, you must run your own.
+
 
 #### Using OpenStreetMap
 
 In `rhoconfig.txt` set the value for `OSM_map_url_roadmap` to an URL of OSM tile map server (example: ‘http://tile.openstreetmap.org/’)
+
+**NOTE: While it is ok to use the public OpenStreetMap tile server for development as long as you follow its guidelines, it is not permitted to release an application pointing to it. Applications found to be in violation of this policy are typically banned from the server.**
 
 #### Using native Google map view on Android
 
@@ -23,63 +37,55 @@ In `rhoconfig.txt` set the value for `OSM_map_url_roadmap` to an URL of OSM tile
             - network_state
             - sdcard
 
-#### using ESRI maps on iPhone
-
-* Install ESRI iOS SDK – use default folders during installations !
-* Add `esri` to your applications extensions list in `build.yml` file.
-* Update map settings in `rhoconfig.txt`
-    * ESRI_map_url_roadmap – URL of ESRI roadmap tile map server (example:  ‘http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/’)
-    * ESRI_map_url_satellite – URL of ESRI satellite tile map server (example: ‘http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/’)
-
 ### Creating a map view
 
 Once the map provider has been setup, use the 'MapView.create' method to create a map that appears on a whole page
 
-Refer to the [MapView API](/v/2.2/rhodesapi/mapview-api#create) for detailed explanation of the params passed to the create method.
+Refer to the [MapView API](../api/MapView#mcreate) for detailed explanation of the params passed to the create method.
 
 Ruby syntax:
     :::ruby
     Rho::MapView.create(
-        :provider => 'Google', 
+        :provider => 'Google', # or 'osm' if you are using OpenStreetMap
         :settings => {
                 :map_type => "hybrid",
-                :region => [current_lat, current_lon, 0.2, 0.2],
+                :region => [40.67, -73.94, 4, 4],
                 :zoom_enabled => true,
                 :scroll_enabled => true,
                 :shows_user_location => false,
                 :api_key => 'Google Maps API Key'
-            }
+            },
         :annotations => [
-                {
-                    :latitude => current_lat, 
-                    :longitude => current_lon, 
-                    :title => "Current location", 
-                    :subtitle => ""
-                }
-            ]
-        )
+            {
+                :latitude => 40.67, 
+                :longitude => -73.94,
+                :title => "New York",
+                :subtitle => "My way"
+            }
+        ]
+    )
 
 JavaScript syntax:
     :::javascript
     Rho.MapView.create({ 
-        provider: 'Google',
+        provider: 'Google', // or 'osm' if you are using OpenStreetMap
         settings: {
                 map_type: 'hybrid',
-                region: [current_lat, current_lon, 0.2, 0.2],
+                region: [40.67, -73.94, 4, 4],
                 zoom_enabled: true,
                 scroll_enabled: true,
                 shows_user_location: false,
                 api_key: 'Google Maps API Key'
-            },
+        },
         annotations: [
                 {
-                    latitude: current_lat, 
-                    longitude: current_lon, 
-                    title: "Current location", 
-                    subtitle: ""
+                    latitude: 40.67,
+                    longitude: -73.94,
+                    title: "New York", 
+                    subtitle: "My way"
                 }
             ]
-        });
+        });      
 
 ### Enable map caching
 
@@ -97,7 +103,7 @@ JavaScript syntax:
 
 You can display a region of a map more quickly by preloaded map tiles in the region.
 
-Refer to the [MapView API](/v/2.2/rhodesapi/mapview-api#preloadmaptiles) for detailed explanation of the params passed to the preload method.
+Refer to the [MapView API](../api/MapView#mpreloadMapTiles) for detailed explanation of the params passed to the preload method.
 
 Ruby syntax:
     :::ruby
